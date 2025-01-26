@@ -1,0 +1,11 @@
+llm:
+  engine: groq
+  # Options: [groq, openai]
+
+openai:
+  embedding_model: text-embedding-3-small
+  chat_model: gpt-4o-mini
+
+groq:
+  embedding_model: all-MiniLM-L6-v2
+  chat_model: Llama3-8b-8192
