@@ -1,14 +1,19 @@
 from abc import ABC, abstractmethod
 from typing import Iterable
-from langchain_community.vectorstores import Chroma
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain_huggingface import HuggingFaceEmbeddings
-from langchain_core.documents import Document
 from langchain.chains.retrieval import create_retrieval_chain
 from langchain.chains.combine_documents import create_stuff_documents_chain
+from langchain_huggingface import HuggingFaceEmbeddings
+from langchain_core.documents import Document
+from langchain_core.output_parsers import StrOutputParser
+from langchain_core.prompts import PromptTemplate
+from langchain_core.runnables.history import RunnableWithMessageHistory
+from langchain_community.vectorstores import Chroma
+from langchain_community.chat_message_histories import ChatMessageHistory
+from operator import itemgetter
 from dotenv import load_dotenv
 
-from prompts import PROMPT_TEMPLATE
+from prompts import PROMPT_TEMPLATE, PROMPT_TEMPLATE_WITH_HISTORY
 
 load_dotenv()
 
@@ -21,6 +26,7 @@ class Base(ABC):
         chunking_config: dict,
         persist_directory="./storage/vectorstore"
     ):
+        self.store = {}
         self.model = model
         self.chunking_config = chunking_config
         self.persist_directory = persist_directory
@@ -72,7 +78,7 @@ class Base(ABC):
         """Create the LLM object for the service."""
 
     def chat(self, query: str):
-        """Creates a conversational retrieval chain."""
+        """Creates a chat chain."""
         llm = self.create_llm()
         retriever=self.vector_db.as_retriever()
         question_answer_chain=create_stuff_documents_chain(llm, PROMPT_TEMPLATE)
@@ -81,6 +87,40 @@ class Base(ABC):
         answer = response['answer']
 
         return answer
+
+    def get_session_history(self, session_ids):
+        print(f"[Conversation Session ID]: {session_ids}")
+        if session_ids not in self.store:  # If the session ID is not in the store
+            # Create a new ChatMessageHistory object and save it to the store
+            self.store[session_ids] = ChatMessageHistory()
+        return self.store[session_ids]
+
+    def chat_with_history(self, query: str, session_id: str):
+        """Creates a conversational chain."""
+        llm = self.create_llm()
+        chain = ({
+            "context": itemgetter("question") | self.vector_db.as_retriever(),
+            "question": itemgetter("question"),
+            "chat_history": itemgetter("chat_history"),
+                }
+                | PROMPT_TEMPLATE_WITH_HISTORY
+                | llm
+                | StrOutputParser()
+            )
+        # Create a RAG chain that records conversations
+        rag_with_history = RunnableWithMessageHistory(
+            chain,
+            self.get_session_history,  # Function to retrieve session history
+            input_messages_key="question",  # Key for the template variable that will contain the user's question
+            history_messages_key="chat_history",  # Key for the history messages
+        )
+        response = rag_with_history.invoke(
+            # Input question
+            {"question": query},
+            # Record the conversation based on the session ID.
+            config={"configurable": {"session_id": session_id}},
+        )
+        return response      
 
     # def _format_docs(self, docs: List[Document]) -> str:
     #     """method to format docs

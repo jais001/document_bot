@@ -94,6 +94,8 @@ if st.sidebar.button("Clear Conversation"):
     chat_document_path = st.session_state["chat_document"]
     rag_model.delete_file(file_path=chat_document_path)
     st.session_state["chat_document"] = ""
+    rag_model.store = {}
+    st.session_state["user_id"] = generate_user_id()
     st.sidebar.success("Document cleared.")
 
 st.sidebar.markdown(" ")
@@ -122,7 +124,8 @@ def generate_response(user_query: str) -> str:
     """
     st.session_state["chat_history"].append({"role": "user", "content": user_query})
 
-    response = rag_model.chat(query=user_query)
+    user_id = st.session_state["user_id"]
+    response = rag_model.chat_with_history(query=user_query, session_id = user_id)
 
     # # print the token usage
     # usage = completion["usage"]
