@@ -5,7 +5,7 @@
 - Create python environment with version `3.11`
 - Run pip install -r requirements.txt
 - Use the env_sample for configuring the dot env
-- Run the application using `streamlit run app.py` ( ensure you are in the current directory)
+- Run the application using `streamlit run home.py` ( ensure you are in the current directory)
 - Also if you are using a vscode, the configuration of the debugger using streamlit has been added.
 
 
