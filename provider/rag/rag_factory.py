@@ -18,15 +18,19 @@ class RagFactory:
             model (str): model for creation
         """
         rag_model = None
-        model = config.llm.engine
+        model_engine = config.llm.engine
+        model = config[model_engine]
+        chunking_config = config.chunk_config
 
-        if model == OPENAI_MODEL:
+        if model_engine == OPENAI_MODEL:
             pass
             # rag_model = OpenAIRAGService()
             return rag_model
-        elif model == GROQ_MODEL:
+        elif model_engine == GROQ_MODEL:
             config = config.groq
-            rag_model = GroqRAGService(llm_model_name=config.chat_model)
+            rag_model = GroqRAGService(
+                model=model, chunking_config=chunking_config
+            )
             return rag_model
         else:
             raise NotImplementedError("Model currently not implemented")

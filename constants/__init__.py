@@ -1,9 +1,14 @@
 import os
 
+ROOT_DIR = os.getcwd()
+
 UPLOAD_FOLDER = 'uploads'
+LOG_DIR = "chatbot_logs"
+SAVED_CHAT_DIR = "saved_chats"
+
 PERSIST_DIRECTORY_CHROMA = "db"
 PDF_FOLDER_PATH = "static/data"
-MODEL_NAME = "gpt-3.5-turbo-0125"
+
 SIMILARITY_THRESHOLD = 0.7
 K_DOCS = 5
 TEMPERATURE = 0

@@ -1,7 +1,9 @@
 from abc import ABC, abstractmethod
-from langchain.vectorstores import Chroma
+from typing import Iterable
+from langchain_community.vectorstores import Chroma
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_huggingface import HuggingFaceEmbeddings
+from langchain_core.documents import Document
 from langchain.chains.retrieval import create_retrieval_chain
 from langchain.chains.combine_documents import create_stuff_documents_chain
 from dotenv import load_dotenv
@@ -14,11 +16,16 @@ load_dotenv()
 class Base(ABC):
     """Base Class
     """
-    def __init__(self, llm_model_name, persist_directory="./storage/vectorstore"):
-        self.llm_model_name = llm_model_name
+    def __init__(
+        self, model: dict,
+        chunking_config: dict,
+        persist_directory="./storage/vectorstore"
+    ):
+        self.model = model
+        self.chunking_config = chunking_config
         self.persist_directory = persist_directory
         self.vector_db = None
-        self.embedding_model = self.__create_embedding_model()
+        self.embedding_model = self.__create_embedding_model(model_name=model.embedding_model)
 
     def __create_embedding_model(self, model_name="all-MiniLM-L6-v2"):
         """Create the embedding model."""
@@ -33,7 +40,7 @@ class Base(ABC):
                 embedding_function=self.embedding_model,
             )
 
-    def ingest_data(self, documents):
+    def ingest_data(self, documents: Iterable[Document]):
         """
         Ingests data into the vector store.
 
@@ -41,7 +48,10 @@ class Base(ABC):
             documents (list of str): List of documents to ingest.
         """
         self.__initialize_vector_db()
-        text_splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=50)
+        text_splitter = RecursiveCharacterTextSplitter(
+            chunk_size=self.chunking_config['chunk_size'],
+            chunk_overlap=self.chunking_config['chunk_overlap']
+        )
         splitted_documents = text_splitter.split_documents(documents)
         self.vector_db.add_documents(splitted_documents)
         self.vector_db.persist()

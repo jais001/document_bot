@@ -1,7 +1,12 @@
+import os
 import yaml
+import uuid
+import logging
 import secrets
 from langchain_core.messages import HumanMessage
 from box import ConfigBox
+
+from constants import *
 
 
 def load_yaml_to_configbox(yaml_file_path: str):
@@ -93,3 +98,20 @@ def get_source_link(response: dict) -> str:
         source_documents = ""
 
     return source_documents
+
+
+def configure_logging_by_guid():
+    """Method to perform logging based on guid"""
+    unique_guid = str(uuid.uuid4())  # Generate a unique GUID
+    log_file = os.path.join(LOG_DIR, f"chat_{unique_guid}.log")
+
+    # Close any existing logging handlers
+    for handler in logging.root.handlers[:]:
+        logging.root.removeHandler(handler)
+
+    logging.basicConfig(
+        filename=log_file,
+        filemode="w",
+        level=logging.INFO,
+        format="%(asctime)s | %(levelname)s | %(message)s",
+    )

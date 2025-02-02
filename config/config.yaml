@@ -9,3 +9,7 @@ openai:
 groq:
   embedding_model: all-MiniLM-L6-v2
   chat_model: Llama3-8b-8192
+
+chunk_config:
+  chunk_size: 1000
+  chunk_overlap: 100
